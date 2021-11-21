@@ -2,7 +2,7 @@
   <div class="inline-flex ml-3 rounded-md shadow">
     <a
       target="_blank"
-      href="https://github.com/web2033/vite-vue3-tailwind-starter"
+      href="http://localhost:8080/authenticate"
       class="
         inline-flex
         items-center

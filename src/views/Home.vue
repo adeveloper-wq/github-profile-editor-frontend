@@ -1,5 +1,39 @@
-<script setup>
+<script>
 import LoginButton from "@/components/LoginButton.vue";
+import { useToast } from "vue-toastification";
+
+export default {
+  setup(){
+    const toast = useToast();
+    return { toast };
+  },
+
+  components: {
+    LoginButton
+  },
+
+  data() {
+    return {
+      
+    };
+  },
+
+  methods: {
+    showErrorToast(message){
+      console.log(message);
+      this.toast.error(message);
+    }
+  },
+
+  mounted() {
+    if (
+        this.$route.query.error !== undefined &&
+        this.$route.query.error.length > 0
+      ) {
+        this.showErrorToast(this.$route.query.error);
+      }
+  },
+};
 </script>
 
 <template>

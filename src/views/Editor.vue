@@ -3,15 +3,8 @@ import { ref } from "vue";
 import showdown from "showdown";
 import ExternalItem from "@/components/ExternalItem.vue";
 import draggable from "vuedraggable";
-
-/* const markdown = ref("");
-const convertedMarkdown = ref("");
-
-const convertMarkdown = () => {
-  const converter = new showdown.Converter();
-  convertedMarkdown.value = ref(converter.makeHtml(markdown.value));
-  console.log(convertedMarkdown.value);
-}; */
+import { Octokit } from "https://cdn.skypack.dev/@octokit/core";
+/* import { Octokit } from "@octokit/core"; */
 
 const items = [
   {
@@ -61,6 +54,7 @@ export default {
         return { object, expanded: true, order: index + 1 };
       }),
       drag: false,
+      collapsed: false,
     };
   },
 
@@ -86,8 +80,23 @@ export default {
       });
     },
     deleteObject(object) {
-      this.list = this.list.filter(item => item !== object);
+      this.list = this.list.filter((item) => item !== object);
       this.convertMarkdown();
+    },
+    toggleCollapseExpand() {
+      for (const item of this.list) {
+        this.list[this.list.indexOf(item)].expanded = this.collapsed;
+      }
+      this.collapsed = !this.collapsed;
+    },
+    async getUser(){
+      const octokit = new Octokit({
+        auth: this.$route.query.access_token,
+      });
+
+      const { data } = await octokit.request("/user");
+
+      console.log(data);
     }
   },
 
@@ -101,6 +110,19 @@ export default {
       };
     },
   },
+
+  beforeCreate() {
+    if (
+      this.$route.query.access_token === undefined ||
+      this.$route.query.access_token.length < 1
+    ) {
+      this.$router.push("/");
+    }
+  },
+
+  mounted(){
+    this.getUser();
+  }
 };
 </script>
 
@@ -118,8 +140,54 @@ export default {
     >
       <div class="w-full grid grid-cols-2 gap-4">
         <div>
+          <button
+            v-on:click="toggleCollapseExpand"
+            class="
+              mb-5
+              px-5
+              py-3
+              w-full
+              flex
+              justify-between
+              font-medium
+              text-white
+              transition
+              duration-150
+              ease-in-out
+              bg-indigo-600
+              border border-transparent
+              rounded-md
+              hover:bg-indigo-500
+              focus:outline-none
+            "
+          >
+            <span v-if="!collapsed">Collapse all</span>
+            <span v-else>Expand all</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                v-if="!collapsed"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M18 12H6"
+              />
+              <path
+                v-else
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+              />
+            </svg>
+          </button>
           <draggable
-            class="list-group"
+            class="list-group border-l-4 pl-3 border-gray-400"
             tag="transition-group"
             :component-data="{
               tag: 'ul',
@@ -135,9 +203,9 @@ export default {
           >
             <template #item="{ element }">
               <li class="list-group-item">
-                <div class="mt-2 shadow bg-gray-200 rounded-xl">
+                <div class="mt-2 shadow bg-gray-800 rounded">
                   <div class="w-full flex justify-between px-2 pt-2">
-                    <span>Test</span>
+                    <span class="text-gray-100">Test</span>
                     <div>
                       <button
                         v-on:click="element.expanded = !element.expanded"
@@ -150,7 +218,7 @@ export default {
                           ease-in-out
                           bg-indigo-200
                           border border-transparent
-                          rounded-md
+                          rounded-full
                           hover:bg-indigo-500
                           focus:outline-none
                         "
@@ -166,7 +234,7 @@ export default {
                             v-if="element.expanded"
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            stroke-width="4"
+                            stroke-width="2"
                             d="M18 12H6"
                           />
                           <path
@@ -186,10 +254,10 @@ export default {
                           transition
                           duration-150
                           ease-in-out
-                          bg-indigo-200
+                          bg-red-200
                           border border-transparent
-                          rounded-md
-                          hover:bg-indigo-500
+                          rounded-full
+                          hover:bg-red-600
                           focus:outline-none
                         "
                       >
@@ -203,7 +271,7 @@ export default {
                           <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            stroke-width="4"
+                            stroke-width="2"
                             d="M6 18L18 6M6 6l12 12"
                           />
                         </svg>
@@ -232,7 +300,7 @@ export default {
                         text-base text-gray-700
                         placeholder-gray-600
                         border
-                        rounded-b-xl
+                        rounded
                         focus:shadow-outline
                       "
                     ></textarea>
@@ -255,7 +323,7 @@ export default {
                 ease-in-out
                 bg-indigo-600
                 border border-transparent
-                rounded-xl
+                rounded-md
                 hover:bg-indigo-500
                 focus:outline-none
               "
@@ -274,7 +342,7 @@ export default {
                 ease-in-out
                 bg-indigo-600
                 border border-transparent
-                rounded-xl
+                rounded-md
                 hover:bg-indigo-500
                 focus:outline-none
               "
