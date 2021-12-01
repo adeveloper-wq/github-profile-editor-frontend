@@ -3,7 +3,7 @@
 
 <template>
   <div>
-    <header class="bg-white shadow" v-if="$route.meta.title">
+    <!-- <header class="bg-white shadow" v-if="$route.meta.title">
       <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <h1 class="flow-root text-3xl font-bold leading-tight text-gray-900">
           <span class="float-left">{{ $route.meta.title }} </span>
@@ -35,6 +35,7 @@
     </header>
     <main>
       <router-view />
-    </main>
+    </main> -->
+    <router-view />
   </div>
 </template>

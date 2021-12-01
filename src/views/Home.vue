@@ -37,7 +37,17 @@ export default {
 </script>
 
 <template>
-  <div class="bg-gray-50">
+<header class="bg-white shadow" v-if="$route.meta.title">
+  <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-12">
+        <div class="float-left">
+          <h1 class="text-3xl font-bold text-gray-900">{{ $route.meta.title }} </h1>
+        </div>
+      </div>
+      </div>
+    </header>
+    <main>
+      <div class="bg-gray-50">
     <div
       class="
         max-w-screen-xl
@@ -70,4 +80,5 @@ export default {
       </div>
     </div>
   </div>
+    </main>
 </template>

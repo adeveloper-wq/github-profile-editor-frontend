@@ -55,6 +55,7 @@ export default {
       }),
       drag: false,
       collapsed: false,
+      user: {},
     };
   },
 
@@ -89,15 +90,15 @@ export default {
       }
       this.collapsed = !this.collapsed;
     },
-    async getUser(){
+    async getUser() {
       const octokit = new Octokit({
         auth: this.$route.query.access_token,
       });
 
       const { data } = await octokit.request("/user");
-
+      this.user = data;
       console.log(data);
-    }
+    },
   },
 
   computed: {
@@ -120,243 +121,311 @@ export default {
     }
   },
 
-  mounted(){
+  mounted() {
     this.getUser();
-  }
+  },
 };
 </script>
 
 <template>
-  <div class="bg-gray-50">
-    <div
-      class="
-        max-w-screen-xl
-        px-4
-        py-12
-        mx-auto
-        sm:px-6
-        lg:py-16 lg:px-8 lg:block lg:items-center lg:justify-between
-      "
-    >
-      <div class="w-full grid grid-cols-2 gap-4">
-        <div>
-          <button
-            v-on:click="toggleCollapseExpand"
+  <header class="bg-white shadow" v-if="$route.meta.title">
+    <div class="px-4 py-2 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="float-left flex items-center flex-row gap-4">
+          <h1 class="text-3xl font-bold text-gray-900">
+            {{ $route.meta.title }}
+          </h1>
+          <a
+            target="_blank"
+            :href="user.html_url"
             class="
-              mb-5
-              px-5
-              py-3
-              w-full
-              flex
-              justify-between
-              font-medium
-              text-white
+              flex flex-row
+              gap-4
+              px-3
+              py-2
+              rounded
+              bg-indigo-100
+              shadow
               transition
               duration-150
               ease-in-out
-              bg-indigo-600
-              border border-transparent
-              rounded-md
-              hover:bg-indigo-500
+              hover:bg-indigo-200
               focus:outline-none
             "
           >
-            <span v-if="!collapsed">Collapse all</span>
-            <span v-else>Expand all</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <img
+              v-if="user.avatar_url !== undefined"
+              class="rounded-full w-12"
+              :src="user.avatar_url"
+            />
+            <div class="flex flex-col">
+              <span
+                class="text-md font-bold text-gray-900"
+                v-if="user.name !== null"
+              >
+                {{ user.name }}
+              </span>
+              <span class="text-gray-600">{{ user.login }}</span>
+            </div>
+          </a>
+        </div>
+        <router-link
+          to="/"
+          class="
+            float-right
+            align-middle
+            px-5
+            py-3
+            text-base
+            font-medium
+            leading-6
+            text-white
+            transition
+            duration-150
+            ease-in-out
+            bg-indigo-600
+            border border-transparent
+            rounded-md
+            hover:bg-indigo-500
+            focus:outline-none
+          "
+          >Cancel</router-link
+        >
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="bg-gray-50">
+      <div
+        class="
+          max-w-screen-xl
+          px-4
+          py-12
+          mx-auto
+          sm:px-6
+          lg:py-16 lg:px-8 lg:block lg:items-center lg:justify-between
+        "
+      >
+        <div class="w-full grid grid-cols-2 gap-4">
+          <div>
+            <button
+              v-on:click="toggleCollapseExpand"
+              class="
+                mb-5
+                px-5
+                py-3
+                w-full
+                flex
+                justify-between
+                font-medium
+                text-white
+                transition
+                duration-150
+                ease-in-out
+                bg-indigo-600
+                border border-transparent
+                rounded-md
+                hover:bg-indigo-500
+                focus:outline-none
+              "
             >
-              <path
-                v-if="!collapsed"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M18 12H6"
-              />
-              <path
-                v-else
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-              />
-            </svg>
-          </button>
-          <draggable
-            class="list-group border-l-4 pl-3 border-gray-400"
-            tag="transition-group"
-            :component-data="{
-              tag: 'ul',
-              type: 'transition-group',
-              name: !drag ? 'flip-list' : null,
-            }"
-            v-model="list"
-            @change="convertMarkdown"
-            v-bind="dragOptions"
-            @start="drag = true"
-            @end="drag = false"
-            item-key="order"
-          >
-            <template #item="{ element }">
-              <li class="list-group-item">
-                <div class="mt-2 shadow bg-gray-800 rounded">
-                  <div class="w-full flex justify-between px-2 pt-2">
-                    <span class="text-gray-100">Test</span>
-                    <div>
-                      <button
-                        v-on:click="element.expanded = !element.expanded"
-                        class="
-                          mr-1
-                          font-medium
-                          text-white
-                          transition
-                          duration-150
-                          ease-in-out
-                          bg-indigo-200
-                          border border-transparent
-                          rounded-full
-                          hover:bg-indigo-500
-                          focus:outline-none
-                        "
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-6 w-6"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+              <span v-if="!collapsed">Collapse all</span>
+              <span v-else>Expand all</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  v-if="!collapsed"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M18 12H6"
+                />
+                <path
+                  v-else
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                />
+              </svg>
+            </button>
+            <draggable
+              class="list-group border-l-4 pl-3 border-gray-400"
+              tag="transition-group"
+              :component-data="{
+                tag: 'ul',
+                type: 'transition-group',
+                name: !drag ? 'flip-list' : null,
+              }"
+              v-model="list"
+              @change="convertMarkdown"
+              v-bind="dragOptions"
+              @start="drag = true"
+              @end="drag = false"
+              item-key="order"
+            >
+              <template #item="{ element }">
+                <li class="list-group-item">
+                  <div class="mt-2 shadow bg-gray-800 rounded">
+                    <div class="w-full flex justify-between px-2 pt-2">
+                      <span class="text-gray-100">Test</span>
+                      <div>
+                        <button
+                          v-on:click="element.expanded = !element.expanded"
+                          class="
+                            mr-1
+                            font-medium
+                            text-white
+                            transition
+                            duration-150
+                            ease-in-out
+                            bg-indigo-200
+                            border border-transparent
+                            rounded-full
+                            hover:bg-indigo-500
+                            focus:outline-none
+                          "
                         >
-                          <path
-                            v-if="element.expanded"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M18 12H6"
-                          />
-                          <path
-                            v-else
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        v-on:click="deleteObject(element)"
-                        class="
-                          font-medium
-                          text-white
-                          transition
-                          duration-150
-                          ease-in-out
-                          bg-red-200
-                          border border-transparent
-                          rounded-full
-                          hover:bg-red-600
-                          focus:outline-none
-                        "
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-6 w-6"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              v-if="element.expanded"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M18 12H6"
+                            />
+                            <path
+                              v-else
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          v-on:click="deleteObject(element)"
+                          class="
+                            font-medium
+                            text-white
+                            transition
+                            duration-150
+                            ease-in-out
+                            bg-red-200
+                            border border-transparent
+                            rounded-full
+                            hover:bg-red-600
+                            focus:outline-none
+                          "
                         >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    <ExternalItem
+                      v-if="element.object.image"
+                      v-bind:class="{ hidden: !element.expanded }"
+                      :imgSrc="element.object.src"
+                    />
+                    <div
+                      v-else
+                      v-bind:class="{ hidden: !element.expanded }"
+                      class="mx-2"
+                    >
+                      <textarea
+                        placeholder="Write Markdown"
+                        v-model="element.object.text"
+                        v-on:input="convertMarkdown"
+                        rows="10"
+                        class="
+                          mb-1
+                          w-full
+                          text-base text-gray-700
+                          placeholder-gray-600
+                          border
+                          rounded
+                          focus:shadow-outline
+                        "
+                      ></textarea>
                     </div>
                   </div>
-
-                  <ExternalItem
-                    v-if="element.object.image"
-                    v-bind:class="{ hidden: !element.expanded }"
-                    :imgSrc="element.object.src"
-                  />
-                  <div
-                    v-else
-                    v-bind:class="{ hidden: !element.expanded }"
-                    class="mx-2"
-                  >
-                    <textarea
-                      placeholder="Write Markdown"
-                      v-model="element.object.text"
-                      v-on:input="convertMarkdown"
-                      rows="10"
-                      class="
-                        mb-1
-                        w-full
-                        text-base text-gray-700
-                        placeholder-gray-600
-                        border
-                        rounded
-                        focus:shadow-outline
-                      "
-                    ></textarea>
-                  </div>
-                </div>
-              </li>
-            </template>
-          </draggable>
-          <div class="w-full grid grid-cols-2 gap-4">
-            <button
-              v-on:click="addText"
-              class="
-                mt-5
-                px-5
-                py-3
-                font-medium
-                text-white
-                transition
-                duration-150
-                ease-in-out
-                bg-indigo-600
-                border border-transparent
-                rounded-md
-                hover:bg-indigo-500
-                focus:outline-none
-              "
-            >
-              Add text
-            </button>
-            <button
-              class="
-                mt-5
-                px-5
-                py-3
-                font-medium
-                text-white
-                transition
-                duration-150
-                ease-in-out
-                bg-indigo-600
-                border border-transparent
-                rounded-md
-                hover:bg-indigo-500
-                focus:outline-none
-              "
-            >
-              Add other
-            </button>
+                </li>
+              </template>
+            </draggable>
+            <div class="w-full grid grid-cols-2 gap-4">
+              <button
+                v-on:click="addText"
+                class="
+                  mt-5
+                  px-5
+                  py-3
+                  font-medium
+                  text-white
+                  transition
+                  duration-150
+                  ease-in-out
+                  bg-indigo-600
+                  border border-transparent
+                  rounded-md
+                  hover:bg-indigo-500
+                  focus:outline-none
+                "
+              >
+                Add text
+              </button>
+              <button
+                class="
+                  mt-5
+                  px-5
+                  py-3
+                  font-medium
+                  text-white
+                  transition
+                  duration-150
+                  ease-in-out
+                  bg-indigo-600
+                  border border-transparent
+                  rounded-md
+                  hover:bg-indigo-500
+                  focus:outline-none
+                "
+              >
+                Add other
+              </button>
+            </div>
           </div>
-        </div>
-        <div>
-          <p class="prose" v-html="convertedMarkdown"></p>
+          <div>
+            <p class="prose" v-html="convertedMarkdown"></p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </main>
 </template>
 
 <style>

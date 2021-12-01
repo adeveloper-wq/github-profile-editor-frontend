@@ -1,7 +1,6 @@
 <template>
   <div class="inline-flex ml-3 rounded-md shadow">
     <a
-      target="_blank"
       href="http://localhost:8080/authenticate"
       class="
         inline-flex
