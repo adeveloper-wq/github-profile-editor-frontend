@@ -4,7 +4,7 @@ import showdown from "showdown";
 import ExternalItem from "@/components/ExternalItem.vue";
 import draggable from "vuedraggable";
 import { Octokit } from "https://cdn.skypack.dev/@octokit/core";
-/* import { Octokit } from "@octokit/core"; */
+import Chart from '@/components/Chart.vue'
 
 const items = [
   {
@@ -44,6 +44,7 @@ export default {
   components: {
     ExternalItem,
     draggable,
+    Chart
   },
 
   data() {
@@ -195,6 +196,7 @@ export default {
     </div>
   </header>
   <main>
+    <Chart />
     <div class="bg-gray-50">
       <div
         class="
