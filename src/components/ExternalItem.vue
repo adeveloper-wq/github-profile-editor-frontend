@@ -1,7 +1,7 @@
 <template>
-  <div class="mx-2">
-    <div class="h-48 w-full bg-white inline-flex rounded">
-      <img class="p-2 rounded-xl" :src="imgSrc" />
+  <div>
+    <div class="h-48 w-full bg-white rounded-b">
+      <img class="h-48 p-2 rounded-xl" :src="imgSrc" />
     </div>
   </div>
 </template>

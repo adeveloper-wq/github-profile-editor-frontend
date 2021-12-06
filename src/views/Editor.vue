@@ -4,37 +4,38 @@ import showdown from "showdown";
 import ExternalItem from "@/components/ExternalItem.vue";
 import draggable from "vuedraggable";
 import { Octokit } from "https://cdn.skypack.dev/@octokit/core";
-import Chart from '@/components/Chart.vue'
+import Chart from "@/components/DoughnutChart.vue";
+const axios = require("axios");
 
 const items = [
-  {
-    image: true,
+  /*   {
+    type: "IMAGE",
     src: "https://images.twinkl.co.uk/tw1n/image/private/t_630/u/ux/graph-wiki_ver_1.png",
-  },
+  }, */
   {
-    image: false,
+    type: "TEXT",
     text: "",
   },
-  {
-    image: true,
+  /*   {
+    type: "IMAGE",
     src: "https://vizzlo.com/uploads/what-is-venn-1.jpg",
   },
   {
-    image: true,
+    type: "IMAGE",
     src: "https://cdn.hswstatic.com/gif/venn-diagram.jpg",
   },
   {
-    image: true,
+    type: "IMAGE",
     src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGr9dhCIv64pNAP96E7Hf6y0KrlxBZchYjJA&usqp=CAU",
   },
   {
-    image: true,
+    type: "IMAGE",
     src: "https://s3.amazonaws.com/thumbnails.venngage.com/template/ab4f6b2c-bd19-4a24-9648-47db694f4c20.png",
-  },
-  {
-    image: false,
+  }, */
+  /*   {
+    type: "TEXT",
     text: "",
-  },
+  }, */
 ];
 
 export default {
@@ -44,7 +45,7 @@ export default {
   components: {
     ExternalItem,
     draggable,
-    Chart
+    Chart,
   },
 
   data() {
@@ -61,21 +62,78 @@ export default {
   },
 
   methods: {
-    convertMarkdown() {
+    async convertMarkdown() {
       const converter = new showdown.Converter();
       this.convertedMarkdown = "";
       for (const item of this.list) {
-        if (!item.object.image) {
+        if (item.object.type === "TEXT") {
           this.convertedMarkdown =
             this.convertedMarkdown + converter.makeHtml(item.object.text);
+        }
+        if (item.object.type === "DOUGHNUT_CHART") {
+          if (item.object.imageUrl === undefined) {
+            let requestData = {
+              type: "doughnut",
+              data: {
+                labels: item.object.data.labels,
+                datasets: [
+                  {
+                    label: item.object.data.label,
+                    data: item.object.data.data,
+                    backgroundColor: [
+                      "rgb(255, 99, 132)",
+                      "rgb(54, 162, 235)",
+                      "rgb(255, 205, 86)",
+                    ],
+                    hoverOffset: 4,
+                  },
+                ],
+              },
+            };
+            await this.axios
+              .get("http://localhost:8080/image", {
+                params: {
+                  data: requestData,
+                },
+              })
+              .then((res) => {
+                this.list[
+                  this.list.findIndex((obj) => obj.id === item)
+                ].object.imageUrl = res.data;
+              });
+            this.convertedMarkdown =
+              this.convertedMarkdown +
+              converter.makeHtml($`![${item.object.data.label}](${res.data})`);
+          } else {
+            this.convertedMarkdown =
+              this.convertedMarkdown +
+              converter.makeHtml(
+                $`![${item.object.data.label}](${item.object.imageUrl})`
+              );
+          }
         }
       }
     },
     addText() {
       this.list.push({
         object: {
-          image: false,
+          type: "TEXT",
           text: "",
+        },
+        expanded: true,
+        order: this.list.length,
+      });
+    },
+    addOther() {
+      this.list.push({
+        object: {
+          type: "DOUGHNUT_CHART",
+          data: {
+            label: "Private/Public Repositories",
+            data: [this.user.owned_private_repos, this.user.public_repos],
+            labels: ["Private Repos", "Public Repos"],
+          },
+          imageUrl: undefined,
         },
         expanded: true,
         order: this.list.length,
@@ -196,7 +254,6 @@ export default {
     </div>
   </header>
   <main>
-    <Chart />
     <div class="bg-gray-50">
       <div
         class="
@@ -350,12 +407,12 @@ export default {
                     </div>
 
                     <ExternalItem
-                      v-if="element.object.image"
+                      v-if="element.object.type === 'IMAGE'"
                       v-bind:class="{ hidden: !element.expanded }"
                       :imgSrc="element.object.src"
                     />
                     <div
-                      v-else
+                      v-if="element.object.type === 'TEXT'"
                       v-bind:class="{ hidden: !element.expanded }"
                       class="mx-2"
                     >
@@ -374,6 +431,13 @@ export default {
                           focus:shadow-outline
                         "
                       ></textarea>
+                    </div>
+                    <div
+                      v-bind:class="{ hidden: !element.expanded }"
+                      class="bg-white p-2 rounded-b"
+                      v-if="element.object.type === 'DOUGHNUT_CHART'"
+                    >
+                      <Chart :givenData="element.object.data" />
                     </div>
                   </div>
                 </li>
@@ -401,6 +465,7 @@ export default {
                 Add text
               </button>
               <button
+                v-on:click="addOther"
                 class="
                   mt-5
                   px-5
