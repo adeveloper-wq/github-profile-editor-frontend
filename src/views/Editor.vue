@@ -5,7 +5,7 @@ import ExternalItem from "@/components/ExternalItem.vue";
 import draggable from "vuedraggable";
 import { Octokit } from "https://cdn.skypack.dev/@octokit/core";
 import Chart from "@/components/DoughnutChart.vue";
-const axios = require("axios");
+import axios from 'axios';
 
 const items = [
   /*   {
@@ -90,7 +90,7 @@ export default {
                 ],
               },
             };
-            await this.axios
+            await axios
               .get("http://localhost:8080/image", {
                 params: {
                   data: requestData,
@@ -98,17 +98,17 @@ export default {
               })
               .then((res) => {
                 this.list[
-                  this.list.findIndex((obj) => obj.id === item)
+                  this.list.findIndex((obj) => obj === item)
                 ].object.imageUrl = res.data;
               });
             this.convertedMarkdown =
               this.convertedMarkdown +
-              converter.makeHtml($`![${item.object.data.label}](${res.data})`);
+              converter.makeHtml(`![${item.object.data.label}](${item.object.imageUrl})`);
           } else {
             this.convertedMarkdown =
               this.convertedMarkdown +
               converter.makeHtml(
-                $`![${item.object.data.label}](${item.object.imageUrl})`
+                `![${item.object.data.label}](${item.object.imageUrl})`
               );
           }
         }
