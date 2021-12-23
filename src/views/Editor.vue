@@ -5,7 +5,7 @@ import ExternalItem from "@/components/ExternalItem.vue";
 import draggable from "vuedraggable";
 import { Octokit } from "https://cdn.skypack.dev/@octokit/core";
 import Chart from "@/components/DoughnutChart.vue";
-import axios from 'axios';
+import axios from "axios";
 
 const items = [
   /*   {
@@ -52,26 +52,39 @@ export default {
     return {
       markdown: "",
       convertedMarkdown: "",
+      convertedMarkdownForGit: "",
       list: items.map((object, index) => {
         return { object, expanded: true, order: index + 1 };
       }),
       drag: false,
       collapsed: false,
       user: {},
+      octokit: new Octokit({
+        auth: this.$route.query.access_token,
+      }),
     };
   },
 
   methods: {
-    async convertMarkdown() {
+    async convertMarkdown(forGit, email) {
       const converter = new showdown.Converter();
-      this.convertedMarkdown = "";
+      if(forGit){
+        this.convertedMarkdownForGit = "";
+      }else{
+        this.convertedMarkdown = "";
+      }
       for (const item of this.list) {
         if (item.object.type === "TEXT") {
-          this.convertedMarkdown =
+          if(forGit){
+            this.convertedMarkdownForGit =
+            this.convertedMarkdownForGit + converter.makeHtml(item.object.text);
+          }else{
+            this.convertedMarkdown =
             this.convertedMarkdown + converter.makeHtml(item.object.text);
+          }
         }
         if (item.object.type === "DOUGHNUT_CHART") {
-          if (item.object.imageUrl === undefined) {
+          if (item.object.base64 === undefined) {
             let requestData = {
               type: "doughnut",
               data: {
@@ -99,21 +112,163 @@ export default {
               .then((res) => {
                 this.list[
                   this.list.findIndex((obj) => obj === item)
-                ].object.imageUrl = res.data;
+                ].object.base64 = res.data;
+                const name_suffix = Date.now();
+                this.list[
+                  this.list.findIndex((obj) => obj === item)
+                ].object.name = item.object.data.label + "_" + name_suffix;
+                this.list[
+                  this.list.findIndex((obj) => obj === item)
+                ].object.imageUrlGithub =
+                  this.user.html_url + "/" + this.user.login + "/blob/main/img/" + item.object.data.label + "_" + name_suffix + ".png";
               });
-            this.convertedMarkdown =
-              this.convertedMarkdown +
-              converter.makeHtml(`![${item.object.data.label}](${item.object.imageUrl})`);
+            if (forGit) {
+              this.convertedMarkdown =
+                this.convertedMarkdown +
+                converter.makeHtml(
+                  `![${item.object.data.label}](${item.object.imageUrlGithub})`
+                );
+            } else {
+              this.convertedMarkdownForGit =
+                this.convertedMarkdownForGit +
+                converter.makeHtml(
+                  `![${item.object.data.label}](${item.object.base64})`
+                );
+            }
           } else {
-            this.convertedMarkdown =
+            if(forGit){
+              this.convertedMarkdownForGit =
+              this.convertedMarkdownForGit +
+              converter.makeHtml(
+                `![${item.object.data.label}](${item.object.imageUrlGithub})`
+              );
+            }else{
+              this.convertedMarkdown =
               this.convertedMarkdown +
               converter.makeHtml(
-                `![${item.object.data.label}](${item.object.imageUrl})`
+                `![${item.object.data.label}](${item.object.base64})`
               );
+            }
+          }
+          if(forGit){
+            await this.octokit
+              .request("PUT /repos/{owner}/{repo}/contents/{path}", {
+                owner: this.user.login,
+                repo: this.user.login,
+                path: `img/${item.object.name}.png`,
+                message: `Upload image img/${item.object.name}.png`,
+                content: item.object.base64.split(',')[1],
+                committer: {
+                  name: this.user.login,
+                  email: email,
+                },
+              })
+              .then((response) => {
+                console.log(response);
+              })
+              .catch((err) => {
+                console.log(err);
+              });
           }
         }
       }
     },
+    async sendToGit() {
+      const emails = await this.octokit.request("/user/emails");
+      const email = emails.data.filter((email) => email.primary === true)[0]
+        .email;
+      await this.convertMarkdown(true, email);
+      let name = this.user.login;
+      let createNew = false;
+      await this.octokit
+        .request("GET /repos/{owner}/{repo}", {
+          owner: name,
+          repo: name,
+        })
+        .then((response) => {
+          console.log(response);
+        })
+        .catch((err) => {
+          console.log(err);
+          createNew = true;
+        });
+
+      if (createNew) {
+        await this.octokit
+          .request("POST /user/repos", {
+            name: name,
+          })
+          .then((response) => {
+            console.log(response);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      }
+
+      let readMeExists = false;
+      let sha = "";
+
+      await this.octokit
+        .request("GET /repos/{owner}/{repo}/contents/{path}", {
+          owner: name,
+          repo: name,
+          path: "README.md",
+        })
+        .then((response) => {
+          readMeExists = true;
+          sha = response.data.sha;
+          console.log(response);
+        })
+        .catch((err) => {
+          console.log(err);
+          readMeExists = false;
+        });
+
+      console.log(this.convertedMarkdownForGit);
+
+      if (readMeExists) {
+        await this.octokit
+          .request("PUT /repos/{owner}/{repo}/contents/{path}", {
+            owner: name,
+            repo: name,
+            path: "README.md",
+            message: "Update Github profile",
+            content: btoa(this.convertedMarkdownForGit),
+            sha: sha,
+            committer: {
+              name: name,
+              email: email,
+            },
+          })
+          .then((response) => {
+            console.log(response);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      } else {
+        await this.octokit
+          .request("PUT /repos/{owner}/{repo}/contents/{path}", {
+            owner: name,
+            repo: name,
+            path: "README.md",
+            message: "Update Github profile",
+            content: btoa(this.convertedMarkdownForGit),
+            committer: {
+              name: name,
+              email: email,
+            },
+          })
+          .then((response) => {
+            console.log(response);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      }
+    },
+
     addText() {
       this.list.push({
         object: {
@@ -129,11 +284,13 @@ export default {
         object: {
           type: "DOUGHNUT_CHART",
           data: {
-            label: "Private/Public Repositories",
+            label: "Private_Public_Repos",
             data: [this.user.owned_private_repos, this.user.public_repos],
             labels: ["Private Repos", "Public Repos"],
           },
-          imageUrl: undefined,
+          base64: undefined,
+          name: undefined,
+          imageUrlGithub: undefined,
         },
         expanded: true,
         order: this.list.length,
@@ -141,7 +298,7 @@ export default {
     },
     deleteObject(object) {
       this.list = this.list.filter((item) => item !== object);
-      this.convertMarkdown();
+      this.convertMarkdown(false);
     },
     toggleCollapseExpand() {
       for (const item of this.list) {
@@ -150,11 +307,7 @@ export default {
       this.collapsed = !this.collapsed;
     },
     async getUser() {
-      const octokit = new Octokit({
-        auth: this.$route.query.access_token,
-      });
-
-      const { data } = await octokit.request("/user");
+      const { data } = await this.octokit.request("/user");
       this.user = data;
       console.log(data);
     },
@@ -322,7 +475,7 @@ export default {
                 name: !drag ? 'flip-list' : null,
               }"
               v-model="list"
-              @change="convertMarkdown"
+              @change="convertMarkdown(false)"
               v-bind="dragOptions"
               @start="drag = true"
               @end="drag = false"
@@ -419,7 +572,7 @@ export default {
                       <textarea
                         placeholder="Write Markdown"
                         v-model="element.object.text"
-                        v-on:input="convertMarkdown"
+                        v-on:input="convertMarkdown(false)"
                         rows="10"
                         class="
                           mb-1
@@ -490,6 +643,27 @@ export default {
             <p class="prose" v-html="convertedMarkdown"></p>
           </div>
         </div>
+        <button
+          v-on:click="sendToGit"
+          class="
+            mt-10
+            px-5
+            py-3
+            w-full
+            font-medium
+            text-white
+            transition
+            duration-150
+            ease-in-out
+            bg-indigo-600
+            border border-transparent
+            rounded-md
+            hover:bg-indigo-500
+            focus:outline-none
+          "
+        >
+          ➡️ Send to Github ➡️
+        </button>
       </div>
     </div>
   </main>
