@@ -5,6 +5,8 @@ import ExternalItem from "@/components/ExternalItem.vue";
 import draggable from "vuedraggable";
 import { Octokit } from "https://cdn.skypack.dev/@octokit/core";
 import Chart from "@/components/DoughnutChart.vue";
+import ChooseItemModel from "@/components/ChooseItemModal.vue";
+import SocialMediaLinks from "@/components/SocialMediaLinks.vue";
 import axios from "axios";
 
 const items = [
@@ -46,10 +48,13 @@ export default {
     ExternalItem,
     draggable,
     Chart,
+    ChooseItemModel,
+    SocialMediaLinks
   },
 
   data() {
     return {
+      showChooseItemModel: false,
       markdown: "",
       convertedMarkdown: "",
       convertedMarkdownForGit: "",
@@ -68,19 +73,20 @@ export default {
   methods: {
     async convertMarkdown(forGit, email) {
       const converter = new showdown.Converter();
-      if(forGit){
+      if (forGit) {
         this.convertedMarkdownForGit = "";
-      }else{
+      } else {
         this.convertedMarkdown = "";
       }
       for (const item of this.list) {
         if (item.object.type === "TEXT") {
-          if(forGit){
+          if (forGit) {
             this.convertedMarkdownForGit =
-            this.convertedMarkdownForGit + converter.makeHtml(item.object.text);
-          }else{
+              this.convertedMarkdownForGit +
+              converter.makeHtml(item.object.text);
+          } else {
             this.convertedMarkdown =
-            this.convertedMarkdown + converter.makeHtml(item.object.text);
+              this.convertedMarkdown + converter.makeHtml(item.object.text);
           }
         }
         if (item.object.type === "DOUGHNUT_CHART") {
@@ -120,7 +126,14 @@ export default {
                 this.list[
                   this.list.findIndex((obj) => obj === item)
                 ].object.imageUrlGithub =
-                  this.user.html_url + "/" + this.user.login + "/blob/main/img/" + item.object.data.label + "_" + name_suffix + ".png";
+                  this.user.html_url +
+                  "/" +
+                  this.user.login +
+                  "/blob/main/img/" +
+                  item.object.data.label +
+                  "_" +
+                  name_suffix +
+                  ".png";
               });
             if (forGit) {
               this.convertedMarkdown =
@@ -136,28 +149,28 @@ export default {
                 );
             }
           } else {
-            if(forGit){
+            if (forGit) {
               this.convertedMarkdownForGit =
-              this.convertedMarkdownForGit +
-              converter.makeHtml(
-                `![${item.object.data.label}](${item.object.imageUrlGithub})`
-              );
-            }else{
+                this.convertedMarkdownForGit +
+                converter.makeHtml(
+                  `![${item.object.data.label}](${item.object.imageUrlGithub})`
+                );
+            } else {
               this.convertedMarkdown =
-              this.convertedMarkdown +
-              converter.makeHtml(
-                `![${item.object.data.label}](${item.object.base64})`
-              );
+                this.convertedMarkdown +
+                converter.makeHtml(
+                  `![${item.object.data.label}](${item.object.base64})`
+                );
             }
           }
-          if(forGit){
+          if (forGit) {
             await this.octokit
               .request("PUT /repos/{owner}/{repo}/contents/{path}", {
                 owner: this.user.login,
                 repo: this.user.login,
                 path: `img/${item.object.name}.png`,
                 message: `Upload image img/${item.object.name}.png`,
-                content: item.object.base64.split(',')[1],
+                content: item.object.base64.split(",")[1],
                 committer: {
                   name: this.user.login,
                   email: email,
@@ -279,7 +292,22 @@ export default {
         order: this.list.length,
       });
     },
-    addOther() {
+    addSocialMediaLinks() {
+      this.list.push({
+         object: {
+          type: "SOCIAL_MEDIA",
+          data: {
+            twitterUsername: undefined,
+            instagramUsername: undefined,
+            linkedInUsername: undefined,
+            youtubeUsername: undefined
+          },
+        },
+        expanded: true,
+        order: this.list.length,
+      });
+    },
+    addPrivatePubliceReposChart() {
       this.list.push({
         object: {
           type: "DOUGHNUT_CHART",
@@ -340,6 +368,18 @@ export default {
 </script>
 
 <template>
+  <ChooseItemModel
+    v-show="showChooseItemModel"
+    @close-modal="showChooseItemModel = false"
+    @private-public-repos-chart="
+      addPrivatePubliceReposChart();
+      showChooseItemModel = false;
+    "
+    @social-media-links="
+      addSocialMediaLinks();
+      showChooseItemModel = false;
+    "
+  />
   <header class="bg-white shadow" v-if="$route.meta.title">
     <div class="px-4 py-2 mx-auto max-w-7xl sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
@@ -592,6 +632,13 @@ export default {
                     >
                       <Chart :givenData="element.object.data" />
                     </div>
+                    <div
+                      v-bind:class="{ hidden: !element.expanded }"
+                      v-if="element.object.type === 'SOCIAL_MEDIA'"
+                      class="h-56"
+                    >
+                      <SocialMediaLinks/>
+                    </div>
                   </div>
                 </li>
               </template>
@@ -618,7 +665,7 @@ export default {
                 Add text
               </button>
               <button
-                v-on:click="addOther"
+                v-on:click="showChooseItemModel = true"
                 class="
                   mt-5
                   px-5
