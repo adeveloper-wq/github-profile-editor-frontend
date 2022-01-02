@@ -121,16 +121,28 @@
 
 <script>
 export default {
-    data: {
+    name: "Social Media Links",
+    data() {
+      return {
         instagramUrl: '',
         twitterUrl: '',
         youtubeUrl: '',
         linkedInUrl: ''
-    },
+      }
+    }, 
     watch: {
-        instagramUrl: function(val, oldVal) {
-            
-        }
+        instagramUrl: function(val) {
+            this.$emit('instagram-url', val);
+        },
+        twitterUrl: function(val) {
+            this.$emit('twitter-url', val);
+        },
+        youtubeUrl: function(val) {
+            this.$emit('youtube-url', val);
+        },
+        linkedInUrl: function(val) {
+            this.$emit('linkedin-url', val);
+        },
     }
 };
 </script>
