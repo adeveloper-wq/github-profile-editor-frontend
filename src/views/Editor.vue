@@ -393,13 +393,14 @@ export default {
                 this.convertedMarkdownForGit +
                 `[<img src="${path}" alt="Instagram-Icon" />](${item.object.data.instagramUrl})`; */
             } else {
-              this.convertedMarkdown =
+              links.push({base64: instagramIconBase64, url: item.object.data.instagramUrl, service: 'Instagram'});
+              /* this.convertedMarkdown =
                 this.convertedMarkdown +
                 `
 <a target="_blank" rel="noopener noreferrer" href="${item.object.data.instagramUrl}">
                 <img src="${instagramIconBase64}" alt="Instagram-Image" />
               </a>
-            `;
+            `; */
             }
           }
           if (item.object.data.twitterUrl !== undefined) {
@@ -414,13 +415,14 @@ export default {
                 this.convertedMarkdownForGit +
                 `[<img src="${path}" alt="Twitter-Icon" />](${item.object.data.twitterUrl})`; */
             } else {
-              this.convertedMarkdown =
+              links.push({base64: twitterIconBase64, url: item.object.data.twitterUrl, service: 'Twitter'});
+              /* this.convertedMarkdown =
                 this.convertedMarkdown +
                 `
               <a target="_blank" rel="noopener noreferrer" href="${item.object.data.twitterUrl}">
                 <img src="${twitterIconBase64}" alt="Twitter-Image" />
               </a>
-            `;
+            `; */
             }
           }
           if (item.object.data.youtubeUrl !== undefined) {
@@ -435,13 +437,14 @@ export default {
                 this.convertedMarkdownForGit +
                 `[<img src="${path}" alt="Youtube-Icon" />](${item.object.data.youtubeUrl})`; */
             } else {
-              this.convertedMarkdown =
+              links.push({base64: youtubeIconBase64, url: item.object.data.youtubeUrl, service: 'Youtube'});
+          /*     this.convertedMarkdown =
                 this.convertedMarkdown +
                 `
               <a target="_blank" rel="noopener noreferrer" href="${item.object.data.youtubeUrl}">
                 <img src="${youtubeIconBase64}" alt="Youtube-Image" />
               </a>
-            `;
+            `; */
             }
           }
           if (item.object.data.linkedInUrl !== undefined) {
@@ -456,13 +459,14 @@ export default {
                 this.convertedMarkdownForGit +
                 `[<img src="${path}" alt="LinkedIn-Icon" />](${item.object.data.linkedInUrl})`; */
             } else {
-              this.convertedMarkdown =
+              links.push({base64: linkedInIconBase64, url: item.object.data.linkedInUrl, service: 'LinkedIn'});
+          /*     this.convertedMarkdown =
                 this.convertedMarkdown +
                 `
               <a target="_blank" rel="noopener noreferrer" href="${item.object.data.linkedInUrl}">
                 <img src="${linkedInIconBase64}" alt="LinkedIn-Image" />
               </a>
-            `;
+            `; */
             }
           }
           if(forGit){
@@ -475,6 +479,17 @@ export default {
                   this.convertedMarkdownForGit = this.convertedMarkdownForGit + `<a target="_blank" rel="noopener noreferrer" href="${linkItem.url}"><img src="${linkItem.path}" alt="${linkItem.service}-Image" /></a>&nbsp;&nbsp;`;
               }
               this.convertedMarkdownForGit = this.convertedMarkdownForGit + '</div>'
+            }
+          }else{
+            if(links.length > 0){
+              this.convertedMarkdown = this.convertedMarkdown + '<div style="display: flex; flex-direction: row; gap: 10px">'
+              for(let linkItem of links){
+               /*  this.convertedMarkdownForGit =
+                  this.convertedMarkdownForGit +
+                  `[<img src="${linkItem.path}" alt="${linkItem.service}-Icon" />](${linkItem.url})`; */
+                  this.convertedMarkdown = this.convertedMarkdown + `<a target="_blank" rel="noopener noreferrer" href="${linkItem.url}"><img src="${linkItem.base64}" alt="${linkItem.service}-Image" /></a>`;
+              }
+              this.convertedMarkdown = this.convertedMarkdown + '</div>'
             }
           }
         }
@@ -932,12 +947,12 @@ export default {
                       class="h-56"
                     >
                       <SocialMediaLinks
-                        @twitter-url="element.object.data.twitterUrl = $event"
+                        @twitter-url="element.object.data.twitterUrl = $event; convertMarkdown(false)"
                         @instagram-url="
-                          element.object.data.instagramUrl = $event
+                          element.object.data.instagramUrl = $event; convertMarkdown(false)
                         "
-                        @youtube-url="element.object.data.youtubeUrl = $event"
-                        @linkedin-url="element.object.data.linkedInUrl = $event"
+                        @youtube-url="element.object.data.youtubeUrl = $event; convertMarkdown(false)"
+                        @linkedin-url="element.object.data.linkedInUrl = $event; convertMarkdown(false)"
                       />
                     </div>
                   </div>
