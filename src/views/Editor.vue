@@ -633,6 +633,36 @@ export default {
         order: this.list.length,
       });
     },
+    async addReposLanguages() {
+      const repos = await this.octokit.request('GET /user/repos');
+      let languages = {};
+      for(const repo of repos.data){
+        const languagesOfRepo = await this.octokit.request('GET /repos/{owner}/{repo}/languages', {
+          owner: repo.owner.login,
+          repo: repo.name
+        });
+        if(languagesOfRepo.data !== undefined && languagesOfRepo.data !== null){
+          for (const [language, bytes] of Object.entries(languagesOfRepo.data)) {
+            console.log(language);
+          if(language in languages){
+            let oldBytes = languages[language];
+            languages[language] = oldBytes + bytes;
+          }else{
+            languages[language] = bytes;
+          }
+        }
+        }
+        console.log(languages);
+        /* const orderedLanguages = Object.values(languages).sort().reduce(
+          (obj, key) => { 
+            obj[key] = languages[key]; 
+            return obj;
+          }, 
+          {}
+        );
+        console.log(orderedLanguages); */
+      }
+    },
     deleteObject(object) {
       this.list = this.list.filter((item) => item !== object);
       this.convertMarkdown(false);
@@ -686,6 +716,11 @@ export default {
     "
     @social-media-links="
       addSocialMediaLinks();
+      showChooseItemModel = false;
+    "
+
+    @repos-languages="
+      addReposLanguages();
       showChooseItemModel = false;
     "
   />

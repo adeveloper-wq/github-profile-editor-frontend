@@ -22,6 +22,27 @@
         Private/Public repos ratio
       </button>
       <button
+      @click="$emit('repos-languages')"
+        class="
+          mt-2
+          px-5
+          py-3
+          w-full
+          font-medium
+          text-white
+          transition
+          duration-150
+          ease-in-out
+          bg-indigo-600
+          border border-transparent
+          rounded-md
+          hover:bg-indigo-500
+          focus:outline-none
+        "
+      >
+        Language statistic for repositories
+      </button>
+      <button
       @click="$emit('social-media-links')"
         class="
           mt-2
